@@ -1,33 +1,31 @@
 # Muslim Founder Launchpad
 
-A polished, static intake landing page for a free community website setup offer.
+A polished, static intake landing page for a free community website setup offer. You bring the idea; the tech, hosting and domain email are handled fi sabilillah.
+
+**Live:** https://launchpad.mscarabia.com
 
 ## What changed from the original brief
 
 - Positions the offer as a **community project**, not an unlimited agency promise.
 - Makes the value clear: landing page, domain connection, email setup and launch help.
-- Uses a shorter, friendlier intake flow with useful branching for domain ownership and starting point.
+- Uses a shorter, friendlier intake flow: three required fields (name, email, idea) plus an optional collapsible section.
 - Adds a privacy reminder and consent checkbox before collecting project details.
 - Includes your existing work and GitHub link without making the page feel like a generic portfolio.
 - Avoids guaranteeing all hosting costs: the copy says free setup/hosting is for suitable projects and the domain is the likely paid item.
 
 ## Files
 
-- `index.html` — landing page and Netlify-compatible multipart form
-- `styles.css` — responsive visual system
-- `script.js` — progressive form indicator, domain field behavior and local-preview confirmation
+- `index.html` — landing page and Formspree AJAX form (no Netlify dependency)
+- `styles.css` — responsive visual system, dark/light themes, scroll-reveal animations
+- `script.js` — canvas background, scroll progress, word-reveal titles, form submission
 
-## Form setup before publishing
+## Form setup
 
-This is intentionally provider-neutral, but the form is already marked up for **Netlify Forms**:
+The form submits to Formspree:
 
-1. Deploy the folder to Netlify.
-2. In Netlify, confirm the `project-intake` form appears after the first deploy.
-3. Add an email notification to your inbox.
-4. Test with a real submission and confirm file upload behavior and notification delivery.
-5. If using another provider, replace the form setup in `index.html` with its endpoint and verify uploads, spam protection and email notifications.
-
-The local preview shows a confirmation but does not send anything. Do not promise an email response until the hosted form has been tested.
+1. Create a form at https://formspree.io — free tier is fine.
+2. Replace the `action` in `index.html` with your endpoint (`https://formspree.io/f/YOUR_FORM_ID`).
+3. Test with a real submission.
 
 ## Suggested operating rules for the offer
 
