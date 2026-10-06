@@ -1,65 +1,116 @@
 (() => {
-  // === THEME TOGGLE ===
-  const themeToggle = document.getElementById('themeToggle');
-  const saved = localStorage.getItem('mfl-theme') || 'light';
-  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-  themeToggle?.addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if (isDark) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('mfl-theme', 'light'); }
-    else { document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem('mfl-theme', 'dark'); }
+  // === THEME ===
+  const toggle = document.getElementById('themeToggle');
+  toggle?.addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', cur);
+    localStorage.setItem('mfl-theme', cur);
   });
 
-  // === SCROLL REVEAL ===
-  const reveals = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-    reveals.forEach(el => io.observe(el));
-  } else { reveals.forEach(el => el.classList.add('visible')); }
+  // === SCROLL PROGRESS BAR ===
+  const bar = document.createElement('div');
+  bar.className = 'scroll-progress';
+  document.body.prepend(bar);
+  const onScroll = () => {
+    const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+    bar.style.transform = 'scaleX(' + pct + ')';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
-  // === CANVAS BACKGROUND (desktop only) ===
+  // === TEXT REVEAL (word by word) ===
+  document.querySelectorAll('.hero-title, .section-title').forEach(el => {
+    const parts = el.innerHTML.split(/(<br\s*\/?>)/i);
+    let out = '', idx = 0;
+    parts.forEach(part => {
+      if (/<br/i.test(part)) { out += part; return; }
+      out += part.split(/(\s+)/).map(w => {
+        if (!w.trim()) return w;
+        return '<span class="word" style="--wi:' + (idx++) + '">' + w + '</span>';
+      }).join('');
+    });
+    el.innerHTML = out;
+  });
+  const wordObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.querySelectorAll('.word').forEach(w => w.classList.add('revealed')); wordObs.unobserve(e.target); }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.hero-title, .section-title').forEach(el => wordObs.observe(el));
+
+  // === SCROLL REVEAL ===
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // === PARALLAX HERO ===
+  const ht = document.querySelector('.hero-title');
+  const hs = document.querySelector('.hero-sub');
+  const hc = document.querySelector('.hero-cta');
+  const hg = document.querySelector('.hero-tag');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (hg) { hg.style.transform = 'translateY(' + y * 0.2 + 'px)'; }
+    if (ht) { ht.style.transform = 'translateY(' + y * 0.15 + 'px)'; ht.style.opacity = Math.max(0, 1 - y / 700); }
+    if (hs) { hs.style.transform = 'translateY(' + y * 0.1 + 'px)'; hs.style.opacity = Math.max(0, 1 - y / 500); }
+    if (hc) { hc.style.transform = 'translateY(' + y * 0.05 + 'px)'; }
+  }, { passive: true });
+
+  // === BIG ANIMATED BACKGROUND ===
   const canvas = document.getElementById('bg-canvas');
   if (canvas && window.innerWidth > 768) {
     const ctx = canvas.getContext('2d');
-    let W, H, particles = [], scrollY = 0, raf;
-    const COUNT = 60;
+    let W, H, scrollY = 0;
     const resize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
     resize();
     window.addEventListener('resize', resize);
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-    for (let i = 0; i < COUNT; i++) {
-      particles.push({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * 2.5 + 0.5,
-        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
-        o: Math.random() * 0.4 + 0.1
-      });
-    }
+    const orbs = Array.from({ length: 5 }, (_, i) => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: 250 + Math.random() * 350,
+      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+      hue: 150 + i * 10
+    }));
+    const parts = Array.from({ length: 80 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 4 + 1,
+      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+      o: Math.random() * 0.5 + 0.15
+    }));
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
-      const color = isDark() ? '78,201,138' : '26,107,74';
-      particles.forEach(p => {
-        p.x += p.vx; p.y += p.vy - scrollY * 0.0003;
+      const dark = isDark();
+      orbs.forEach(orb => {
+        orb.x += orb.vx; orb.y += orb.vy - scrollY * 0.0008;
+        if (orb.x < -orb.r) orb.x = W + orb.r; if (orb.x > W + orb.r) orb.x = -orb.r;
+        if (orb.y < -orb.r) orb.y = H + orb.r; if (orb.y > H + orb.r) orb.y = -orb.r;
+        const g = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r);
+        g.addColorStop(0, dark ? 'hsla(' + orb.hue + ',50%,30%,0.12)' : 'hsla(' + orb.hue + ',45%,45%,0.08)');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2); ctx.fill();
+      });
+      const color = dark ? '78,201,138' : '26,107,74';
+      parts.forEach(p => {
+        p.x += p.vx; p.y += p.vy - scrollY * 0.0004;
         if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
         if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${color},${p.o})`; ctx.fill();
+        ctx.fillStyle = 'rgba(' + color + ',' + p.o + ')'; ctx.fill();
       });
-      // Connect nearby particles
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
+      for (let i = 0; i < parts.length; i++) {
+        for (let j = i + 1; j < parts.length; j++) {
+          const dx = parts[i].x - parts[j].x, dy = parts[i].y - parts[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(${color},${0.06 * (1 - dist / 140)})`;
-            ctx.lineWidth = 0.5; ctx.stroke();
+          if (dist < 160) {
+            ctx.beginPath(); ctx.moveTo(parts[i].x, parts[i].y); ctx.lineTo(parts[j].x, parts[j].y);
+            ctx.strokeStyle = 'rgba(' + color + ',' + (0.08 * (1 - dist / 160)) + ')';
+            ctx.lineWidth = 0.6; ctx.stroke();
           }
         }
       }
-      raf = requestAnimationFrame(draw);
+      requestAnimationFrame(draw);
     };
     window.addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
     draw();
@@ -85,15 +136,9 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
     try {
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
-      if (res.ok) {
-        success?.classList.add('visible');
-        success?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        form.reset(); updateProgress();
-      } else {
-        const data = await res.json();
-        alert(data.errors ? data.errors.map(x => x.message).join(', ') : 'Something went wrong. Please try again.');
-      }
-    } catch { alert('Network error. Please check your connection and try again.'); }
+      if (res.ok) { success?.classList.add('visible'); success?.scrollIntoView({ behavior: 'smooth', block: 'center' }); form.reset(); updateProgress(); }
+      else { const data = await res.json(); alert(data.errors ? data.errors.map(x => x.message).join(', ') : 'Something went wrong.'); }
+    } catch { alert('Network error. Please try again.'); }
     finally { if (btn) { btn.disabled = false; btn.textContent = orig; } }
   });
   updateProgress();
