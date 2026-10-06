@@ -27,17 +27,50 @@
     if (fileInput.files?.length && help) help.textContent = `${fileInput.files[0].name} selected. You can replace it before sending.`;
   });
   startingPoint?.forEach((input) => input.addEventListener('change', updateProgress));
-  form?.addEventListener('submit', (event) => {
+  form?.addEventListener('submit', async (event) => {
     if (!form.checkValidity()) {
       event.preventDefault();
       form.reportValidity();
       return;
     }
-    // On a static preview, show a confirmation without pretending the form was delivered.
-    if (location.protocol === 'file:') {
-      event.preventDefault();
-      success?.classList.add('visible');
-      success?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    event.preventDefault();
+
+    const submitBtn = form.querySelector('[type="submit"]');
+    const originalText = submitBtn?.textContent;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { Accept: 'application/json' },
+      });
+
+      if (response.ok) {
+        success?.classList.add('visible');
+        success?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        form.reset();
+        updateProgress();
+        updateDomain();
+      } else {
+        const data = await response.json();
+        if (data.errors) {
+          const messages = data.errors.map((e) => e.message).join(', ');
+          alert('Form error: ' + messages);
+        } else {
+          alert('Something went wrong. Please try again.');
+        }
+      }
+    } catch {
+      alert('Network error. Please check your connection and try again.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
     }
   });
   updateDomain();
