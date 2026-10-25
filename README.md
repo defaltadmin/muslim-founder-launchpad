@@ -34,3 +34,21 @@ The form submits to Formspree:
 - Never ask people to upload passwords or sensitive documents.
 - Get permission before displaying a finished project as a portfolio reference.
 - Consider a short review/approval step before purchasing a domain on somebody else's behalf.
+
+---
+
+## Mohammed Siddiqui · BIO-key (site in `bio-key/` folder)
+
+A single-file, self-contained interview page for **Mohammed Ahmed Siddiqui** — Business Development Manager at BIO-key (Saudi Arabia). It is a personal landing page covering his background, sales record, network, and a 30/60/90-day plan to build the Saudi channel for BIO-key.
+
+**Live:** https://siddiqui.mscarabia.com/bio-key/
+
+**Hosting:** Cloudflare Pages — deploy the `bio-key/` folder as the output directory on the custom domain `siddiqui.mscarabia.com`.
+
+**Files**
+- `bio-key/index.html` — the entire site. Self-contained HTML: all CSS and JS are embedded inline, zero external assets, only Google Fonts loaded from CDN.
+- `sitemap.xml` — updated to include both the launchpad and bio-key URLs.
+
+**Notes**
+- The page is marked `noindex, nofollow` (it is an interview site, not a public marketing page). Remove that meta tag if you want it indexed.
+- All section references (sitemap, robots) point at the root `sitemap.xml`, which now lists both domains.
